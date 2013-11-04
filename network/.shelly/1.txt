@@ -1,1 +1,0 @@
-readfile /home/sysadmin/easynet/network/hosts.config
