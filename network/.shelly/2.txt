@@ -1,5 +1,0 @@
-readfile /home/sysadmin/easynet/network/hosts.config
-writefile /etc/hosts
-echo '/etc/init.d/networking restart'
-/etc/init.d/networking restart
-which /etc/init.d/networking
