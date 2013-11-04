@@ -43,6 +43,18 @@ nsswitchAdd toNsswitch = (whatever the command is to append to the end of an arr
         where desired line = isAddingLine line
 
 
+--append /etc/yp.conf to identify it20 as the gateway server
+
+gateway <- readfile "gateway.config"
+appendfile "/etc/yp.conf" "ypserver " "gateway"
+
+--check to make sure that the default domain is correct
+ 
+  --NOT YET IMPLEMENTED--
+
+
+
+
 
 --processing the password file to be parsed into the setup files for users
 
