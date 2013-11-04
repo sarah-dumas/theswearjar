@@ -10,5 +10,5 @@ sudo_ com args = run_ "sudo" (com:args)
 
 main = shelly $ verbosely $ do
 	hosts <- readfile "hosts.config"
-	appendfile "/etc/hosts" hosts
+	writefile "/etc/hosts" hosts
 	run_ "/etc/init.d/networking" ["restart"]
