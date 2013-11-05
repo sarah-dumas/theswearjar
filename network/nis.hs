@@ -10,65 +10,88 @@ sudo_ com args = run_ "sudo" (com:args)
 
 main = shelly $ verbosely $ do
 
---the install for NIS  is going to ask for a default domain, for now give it
---it.cs.umb.edu, later on you can update it with the correct values and/or ask for input
---THIS NEEDS TO BE IMPLEMENTED
+--install NIS
+--you will be prompted for the defaultdomain
+--note to self: figure out how to implement this
 
 apt_get "update" []
 apt_get "install" ["nis"]
-apt-get "install" [" sysv-rc-conf"]
+apt_get "install" ["sysv-rc-conf"]
 
---add NIS to the four lines indicated in nsswitch.conf
-contents <- readFile "/etc/nsswitch.conf"
-let output = unlines (map process (lines contents))
-writFile outputPath output
 
---determine if the line is one of the four lines to add to, if it's not 
---leave it as is
+--add the lines 'NIS' to the specified four lines in nsswitch.conf
+
+addNIS = do contents <- readfine "/etc/nsswitch.conf"
+            let output = unlines (map process (lines contents))
+            writefile "/etc/nsswitch.conf" output
+
+--deterine if the line is one of the four lines to be added to
+
 process :: String -> String
 process line
-   |isAddingLine = line ++" nis" --check to make sure there is actually supposed to be a space here
-   |otherwise = line
+      |isAddingLine = line ++" nis" --if this doesn't work on shot one take out the space
+      |otherwise = line
 
-
-
---determine whether the lines you have are one of the four lines you want to
---add to
+--filter for picking out the four lines to add to
 isAddingLine :: [T.Text] -> Bool
-isAddingLine line = head (T.words line) == "passwd" || "group" || "shadow"" || "hosts"
- 
---add 'nis' to the end of the four lines you want in the array
-nsswitchAdd :: [T.Text] -> [T.Text]
-nsswitchAdd toNsswitch = (whatever the command is to append to the end of an array element) 
-        where desired line = isAddingLine line
+isAddingLine line = head (T.Words line) == "passwd" || "group" || "shadow" || "hosts" 
 
 
---append /etc/yp.conf to identify it20 as the gateway server
+--modify /etc/yp.conf to identify the gateway server
 
 gateway <- readfile "gateway.config"
-appendfile "/etc/yp.conf" "ypserver " "gateway"
+appendfile "/etc/yp.conf" $ "ypserver " ++ gateway
 
---check to make sure that the default domain is correct
- 
-  --NOT YET IMPLEMENTED--
+--check to make sure you have the correct default domain
 
+defaultChecker :: ShIO Bool
+defaultchecker = do defaultchecker <- readfile "/etc/defaultdomain" 
+                    defaultdomain <- readfile "defaultdomain.config"
+	            if defaultchecker /= defaultdomain
+		    then do echo "Incorrect default domain. Exiting program. Please check your configuration files, specifically defaultdomain.config.."
+                            return False
+                    else return True        
 
+--process the password file to be parsed into the mkdir command for home
+--directories as well as the chown/chgrp commands
 
-
-
---processing the password file to be parsed into the setup files for users
-
+--is the line a comment?
 isComment :: T.Text -> Bool
 isComment line = T.head line == "#"
 
---Is the line the username/password header? 
+--is the line the username/password header?
 isHeader :: T.Text -> Bool
 isHeader line = head (T.words line) == "username"
 
---Puts the username/password combos into a list of lists in order to be used 
---in linux's adduser command
-toUsername :: T.Text -> [[T.Text]]
-toUsername usersconfig = map words stripped
-    where predicate line = isComment line || isHeader line	
-          stripped = filter predicate $ lines  usersconfig
 
+usersconfig <- readfile "users.config"  --read in users.config into a variable
+
+toUsername :: T.Text -> [T.Text]  --put the usernames in a list      
+toUsername usersconfig = map words stripped  --dump usernames into a list minus filtered items
+         where predicate line = isComment line || isHeader line  --sets filter to be header and comment lines
+		stripped = filter predicate $ lines usersconfig  --subtracts the filter from the entire list
+
+
+--make a home directory for each user using format /home/username
+
+makeHome :: [T.Text] -> ShIO ()
+makeHome users = mapM_ mkhome users  -- takes T.Text objects and makes them ShIO () objects
+  where mkhome user = do run_ "mkdir" ["/home/" T.append user] --for each instance of mkhome, run mkdir to create a home directory for that user
+                         run_ "chown" ["/home/" T.append user, user] --change owner of directory to user
+                         run_ "chgrp" ["/home/" T.append user, user] --change group of directory to user
+
+--restart NIS
+
+run_ "sudo service ypbind" ["restart"]
+run_ "sudo sysv-rc-conf ypbind" ["on"]
+
+
+
+
+
+
+
+
+
+
+ 
