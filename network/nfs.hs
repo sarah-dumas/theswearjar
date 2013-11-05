@@ -10,16 +10,20 @@ sudo_ com args = run_ "sudo" (com:args)
 
 --update the system and install nfs and autofs
 
-
+apt_get "update"[]
+apt_get "install" ["nfs-common"]
+apt_get "install" ["nfs-kernel-server]
 
 
 --move directories from home to home.computername
 
-
+computername <- readfile "computername.config"
+run_ "mv" ["/home", "/home." T.append computername]
 
 
 --create a directory to use as a mount point named /home
 
+run_ "mkdir" ["/home"]
 
 
 
