@@ -10,9 +10,9 @@ sudo_ com args = run_ "sudo" (com:args)
 
 --update the system and install nfs and autofs
 main = shelly $ verbosely $ do
-       apt_get "update"[]
-       apt_get "install" ["nfs-common"]
-       apt_get "install" ["nfs-kernel-server"]
+       run_ "apt-get" ["update"]
+       run_ "apt-get" ["install", "nfs-common"]
+       run_ "apt-get" ["install", "nfs-kernel-server"]
 
 
 --move directories from home to home.computername
