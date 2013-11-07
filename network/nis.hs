@@ -23,7 +23,7 @@ addNIS = do contents <- readfile "/etc/nsswitch.conf"
 
 process :: T.Text -> T.Text
 process line
-      |isAddingLine line = line T.append " nis" --if this doesn't work on shot one take out the space
+      |isAddingLine line = line `T.append` " nis" --if this doesn't work on shot one take out the space
       |otherwise = line
 
 --filter for picking out the four lines to add to
@@ -38,7 +38,7 @@ isAddingLine line = valid . head . T.words $ line
 --modify /etc/yp.conf to identify the gateway server
 
 ypGateway = do gateway <- readfile "gateway.config"
-               appendfile "/etc/yp.conf" $ "ypserver " ++ gateway
+               appendfile "/etc/yp.conf" $ "ypserver " `T.append` gateway
 
 --check to make sure you have the correct default domain
 
@@ -55,7 +55,7 @@ defaultChecker = do defaultchecker <- readfile "/etc/defaultdomain"
 
 --is the line a comment?
 isComment :: T.Text -> Bool
-isComment line = T.head line == "#"
+isComment line = T.head line == '#'
 
 --is the line the username/password header?
 isHeader :: T.Text -> Bool
@@ -65,18 +65,18 @@ isHeader line = head (T.words line) == "username"
 usersconfig = readfile "users.config"  --read in users.config into a variable
 
 toUsername :: T.Text -> [T.Text]  --put the usernames in a list      
-toUsername usersconfig = map words stripped  --dump usernames into a list minus filtered items
+toUsername usersconfig = map (head . T.words) stripped  --dump usernames into a list minus filtered items
          where predicate line = isComment line || isHeader line  --sets filter to be header and comment lines
-	       stripped = filter predicate $ lines usersconfig  --subtracts the filter from the entire list
+	       stripped = filter predicate $ T.lines usersconfig  --subtracts the filter from the entire list
 
 
 --make a home directory for each user using format /home/username
 
 makeHome :: [T.Text] -> ShIO ()
 makeHome users = mapM_ mkhome users  -- takes T.Text objects and makes them ShIO () objects
-  where mkhome user = do run_ "mkdir" ["/home/" T.append user] --for each instance of mkhome, run mkdir to create a home directory for that user
-                         run_ "chown" ["/home/" T.append user, user] --change owner of directory to user
-                         run_ "chgrp" ["/home/" T.append user, user] --change group of directory to user
+  where mkhome user = do run_ "mkdir" ["/home/" `T.append` user] --for each instance of mkhome, run mkdir to create a home directory for that user
+                         run_ "chown" ["/home/" `T.append` user, user] --change owner of directory to user
+                         run_ "chgrp" ["/home/" `T.append` user, user] --change group of directory to user
 
 --restart NIS
 
