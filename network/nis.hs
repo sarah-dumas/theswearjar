@@ -6,46 +6,44 @@ import Shelly
 import qualified Data.Text as T
 default (T.Text)
 
-sudo_ com args = run_ "sudo" (com:args)
 
 main = shelly $ verbosely $ do
-
---install NIS
---you will be prompted for the defaultdomain
---note to self: figure out how to implement this
-
-apt_get "update" []
-apt_get "install" ["nis"]
-apt_get "install" ["sysv-rc-conf"]
+       run_ "apt-get" ["update"]
+       run_ "apt-get" ["install", "nis"]
+       run_ "apt-get" ["install", "sysv-rc-conf"]
 
 
 --add the lines 'NIS' to the specified four lines in nsswitch.conf
 
-addNIS = do contents <- readfine "/etc/nsswitch.conf"
-            let output = unlines (map process (lines contents))
+addNIS = do contents <- readfile "/etc/nsswitch.conf"
+            let output = T.unlines (fmap process (T.lines contents))
             writefile "/etc/nsswitch.conf" output
 
---deterine if the line is one of the four lines to be added to
+--determine if the line is one of the four lines to be added to
 
-process :: String -> String
+process :: T.Text -> T.Text
 process line
-      |isAddingLine = line ++" nis" --if this doesn't work on shot one take out the space
+      |isAddingLine line = line T.append " nis" --if this doesn't work on shot one take out the space
       |otherwise = line
 
 --filter for picking out the four lines to add to
-isAddingLine :: [T.Text] -> Bool
-isAddingLine line = head (T.Words line) == "passwd" || "group" || "shadow" || "hosts" 
-
+isAddingLine :: T.Text -> Bool
+isAddingLine line = valid . head . T.words $ line 
+             where valid "passwd" = True
+                   valid "group" = True 
+                   valid "shadow" = True 
+                   valid "hosts" = True
+                   valid _ = False
 
 --modify /etc/yp.conf to identify the gateway server
 
-gateway <- readfile "gateway.config"
-appendfile "/etc/yp.conf" $ "ypserver " ++ gateway
+ypGateway = do gateway <- readfile "gateway.config"
+               appendfile "/etc/yp.conf" $ "ypserver " ++ gateway
 
 --check to make sure you have the correct default domain
 
 defaultChecker :: ShIO Bool
-defaultchecker = do defaultchecker <- readfile "/etc/defaultdomain" 
+defaultChecker = do defaultchecker <- readfile "/etc/defaultdomain" 
                     defaultdomain <- readfile "defaultdomain.config"
 	            if defaultchecker /= defaultdomain
 		    then do echo "Incorrect default domain. Exiting program. Please check your configuration files, specifically defaultdomain.config.."
@@ -64,12 +62,12 @@ isHeader :: T.Text -> Bool
 isHeader line = head (T.words line) == "username"
 
 
-usersconfig <- readfile "users.config"  --read in users.config into a variable
+usersconfig = readfile "users.config"  --read in users.config into a variable
 
 toUsername :: T.Text -> [T.Text]  --put the usernames in a list      
 toUsername usersconfig = map words stripped  --dump usernames into a list minus filtered items
          where predicate line = isComment line || isHeader line  --sets filter to be header and comment lines
-		stripped = filter predicate $ lines usersconfig  --subtracts the filter from the entire list
+	       stripped = filter predicate $ lines usersconfig  --subtracts the filter from the entire list
 
 
 --make a home directory for each user using format /home/username
@@ -82,8 +80,8 @@ makeHome users = mapM_ mkhome users  -- takes T.Text objects and makes them ShIO
 
 --restart NIS
 
-run_ "sudo service ypbind" ["restart"]
-run_ "sudo sysv-rc-conf ypbind" ["on"]
+restartNIS = do run_ "sudo service ypbind" ["restart"]
+                run_ "sudo sysv-rc-conf ypbind" ["on"]
 
 
 
