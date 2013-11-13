@@ -1,16 +1,18 @@
-{-# LANGUAGE OverloadedStrings #-}
+
+[-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ExtendedDefaultRules #-}
 {-# OPTIONS_GHC -fno-warn-type-defaults #-}
 
 import Shelly
+import Sudo
 import qualified Data.Text as T
 default (T.Text)
 
 
 main = shelly $ verbosely $ do
-       run_ "apt-get" ["update"]
-       run_ "apt-get" ["install", "nis"]
-       run_ "apt-get" ["install", "sysv-rc-conf"]
+       sudo_ "apt-get" ["update"]
+       sudo_ "apt-get" ["install", "nis", "-y", "-q"]
+       sudo_ "apt-get" ["install", "sysv-rc-conf", "-y", "-q"]
 
 
 --add the lines 'NIS' to the specified four lines in nsswitch.conf
