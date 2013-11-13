@@ -3,34 +3,35 @@
 {-# OPTIONS_GHC -fno-warn-type-defaults #-}
 
 import Shelly
+import Sudo
 import qualified Data.Text as T
 default (T.Text)
 
-sudo_ com args = run_ "sudo" (com:args)
 
 --update the system and install nfs and autofs
 main = shelly $ verbosely $ do
-       run_ "apt-get" ["update"]
-       run_ "apt-get" ["install", "nfs-common"]
-       run_ "apt-get" ["install", "nfs-kernel-server"]
+       sudo_ "apt-get" ["update"]
+       sudo_ "apt-get" ["install", "nfs-common"]
+       sudo_ "apt-get" ["install", "nfs-kernel-server"]
 
 
 --move directories from home to home.computername
 
 directoryMove = do computername <- readfile "computername.config"
-                   run_ "mv" ["/home", "/home." `T.append` computername]
+                   sudo_ "mv" ["/home", "/home." `T.append` computername]
 
 
 --create a directory to use as a mount point named /home
 
-makeDir = do run_ "mkdir" ["/home"]
+makeDir = do sudo_ "mkdir" ["/home"]
 
 
 
 --append /etc/passwd to change sysadmin account's home to home.computername
 
 passwdOverwrite = do overwrite <- readfile "passwd.config"  --leave this a lazy overwrite for now. Later on we will change it so it pattern-matches.
-                     writefile "/etc/passwd" overwrite
+                     writefile "/etc/tmp.passwd" overwrite
+                     sudo_ "mv" ["/etc/tmp.passwd", "/etc/passwd"]
 
 
 --append /etc/exports to tell it where and how to export our homes
