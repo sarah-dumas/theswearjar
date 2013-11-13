@@ -11,8 +11,8 @@ default (T.Text)
 --update the system and install nfs and autofs
 main = shelly $ verbosely $ do
        sudo_ "apt-get" ["update"]
-       sudo_ "apt-get" ["install", "nfs-common"]
-       sudo_ "apt-get" ["install", "nfs-kernel-server"]
+       sudo_ "apt-get" ["install", "nfs-common", "-y", "-q"]
+       sudo_ "apt-get" ["install", "nfs-kernel-server", "-y", "-q"]
 
 
 --move directories from home to home.computername
