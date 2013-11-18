@@ -1,5 +1,5 @@
 
-[-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ExtendedDefaultRules #-}
 {-# OPTIONS_GHC -fno-warn-type-defaults #-}
 
@@ -10,10 +10,14 @@ default (T.Text)
 
 
 main = shelly $ verbosely $ do
-       sudo_ "apt-get" ["update"]
-       sudo_ "apt-get" ["install", "nis", "-y", "-q"]
-       sudo_ "apt-get" ["install", "sysv-rc-conf", "-y", "-q"]
-
+         sudo_ "apt-get" ["update"]
+         sudo_ "apt-get" ["install", "nis", "-y", "-q"]
+         sudo_ "apt-get" ["install", "sysv-rc-conf", "-y", "-q"]
+         addNIS
+         ypGateway         
+         restartNIS
+         users <- usersconfig
+         makeHome $ toUsername users        
 
 --add the lines 'NIS' to the specified four lines in nsswitch.conf
 
@@ -74,7 +78,7 @@ toUsername usersconfig = map (head . T.words) stripped  --dump usernames into a 
 
 --make a home directory for each user using format /home/username
 
-makeHome :: [T.Text] -> ShIO ()
+--makeHome :: [T.Text] -> ShIO ()
 makeHome users = mapM_ mkhome users  -- takes T.Text objects and makes them ShIO () objects
   where mkhome user = do run_ "mkdir" ["/home/" `T.append` user] --for each instance of mkhome, run mkdir to create a home directory for that user
                          run_ "chown" ["/home/" `T.append` user, user] --change owner of directory to user
@@ -82,8 +86,8 @@ makeHome users = mapM_ mkhome users  -- takes T.Text objects and makes them ShIO
 
 --restart NIS
 
-restartNIS = do run_ "sudo service ypbind" ["restart"]
-                run_ "sudo sysv-rc-conf ypbind" ["on"]
+restartNIS = do sudo_ "service ypbind" ["restart", "-y", "-q"]
+                sudo_ "sysv-rc-conf ypbind" ["on", "-y", "-q"]
 
 
 
