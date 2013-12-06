@@ -35,10 +35,9 @@ def listLoader():
 
 def replyToTweet(api,reply):
    
-    normalized_tweet = reply.text.lower().strip()
-
-    if normalized_tweet.split().count('@'+ reply.user.screen_name.lower()) > 0:
-        return
+    if reply.retweeted:
+       log(at='filter', reason='already_retweeted', tweet=reply.id)
+       return
     
     return api.update_status("@{0} put a quarter in the swear jar: http://theswearjar.weebly.com".format(reply.user.screen_name.lower()))
     time.sleep(350);
@@ -63,11 +62,11 @@ def main():
 
     for x in SWEARS_LIST:
 
-        replies = api.search(q="cunt")
+        replies = api.search(q=x)
         replies.reverse()
 
         for reply in replies:
-    
+           
             replyToTweet(api,reply)
 
 main()
