@@ -2,11 +2,17 @@
 #imports
 import tweepy, time
 import settings
+import os, time, json
+from contextlib import contextmanager
+from urlparse import urlparse
 
 #globals
 REPLY_LIST = []
 SWEARS_LIST = []
 
+
+def log(**kwargs):
+    print ' '.join( "{0}={1}".format(k,v) for k,v in sorted(kwargs.items()) )
  
 def IDsetter(statefile,id):
 
@@ -33,22 +39,25 @@ def listLoader():
     global SWEARS_LIST
     SWEARS_LIST = [line.lower().strip() for line in open('swears.txt')]
 
+
 def replyToTweet(api,reply):
    
     if reply.retweeted:
        log(at='filter', reason='already_retweeted', tweet=reply.id)
        return
     
-    return api.update_status("@{0} put a quarter in the swear jar: http://theswearjar.weebly.com".format(reply.user.screen_name.lower()))
-    time.sleep(350);
+    
+    log(at='retweet', tweet=reply.id)
+    return api.update_status("@{0} What a foul mouth! Stop cussing and put a quarter in the swear jar: http://theswearjar.weebly.com".format(reply.user.screen_name.lower()))
+        
 
 def main():
 
 
-    CONSUMER_KEY = 'xxxxx'
-    CONSUMER_SECRET = 'xxxxx'
-    ACCESS_KEY = 'xxxxx'
-    ACCESS_SECRET = 'xxxxx'
+    CONSUMER_KEY = 'cxCjlSLtIR2Lp5SwcEaXQ'
+    CONSUMER_SECRET = 'BziDhlF6qeaWb505MjbuPbIdsoAYzzAzybnSeXFVb18'
+    ACCESS_KEY = '2227279891-UbAFtiT5NpGu5OKFgjqQe9UANGAibaowRNkBsnY'
+    ACCESS_SECRET = 'NRADw3kJM6JDX3Nw72r5WUUQdW8lvKuXVEg8sFblAyOSF'
     auth = tweepy.OAuthHandler(CONSUMER_KEY, CONSUMER_SECRET)
     auth.set_access_token(ACCESS_KEY, ACCESS_SECRET)
     api = tweepy.API(auth)
@@ -66,7 +75,8 @@ def main():
         replies.reverse()
 
         for reply in replies:
-           
             replyToTweet(api,reply)
+            print("@{0} put a quarter in the swear jar: http://theswearjar.weebly.com".format(reply.user.screen_name.lower()))
+            time.sleep(3600)
 
 main()
