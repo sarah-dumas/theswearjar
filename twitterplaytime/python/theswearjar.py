@@ -5,6 +5,8 @@ import settings
 import os, time, json
 from contextlib import contextmanager
 from urlparse import urlparse
+from random import choice
+import random
 
 #globals
 REPLY_LIST = []
@@ -46,7 +48,7 @@ def listLoader():
 #reply to the tweet with some anti-spam parameters
 def replyToTweet(api,reply):
    
-    #don't reply retweets we've already retweeted or users we've already retweeted once
+    #don't reply retweets we've already retweeted
     if reply.retweeted:
        log(at='filter', reason='already_retweeted', tweet=reply.id)
        return
@@ -60,11 +62,11 @@ def replyToTweet(api,reply):
 
 def main():
 
-
     CONSUMER_KEY = ''
     CONSUMER_SECRET = ''
     ACCESS_KEY = ''
     ACCESS_SECRET = ''
+
     auth = tweepy.OAuthHandler(CONSUMER_KEY, CONSUMER_SECRET)
     auth.set_access_token(ACCESS_KEY, ACCESS_SECRET)
     api = tweepy.API(auth)
@@ -72,27 +74,29 @@ def main():
     #load the list
     listLoader()
 
-
+    #fetch the last ID you saw
     last_id=IDgetter(settings.last_id_file)
     
-    
-
-    for x in SWEARS_LIST:
-        
-        #search API for each swear in the swear dictionary
-        replies = api.search(q=x)
  
+    #shuffle the swears list
+    for x in range (0, 200):    
+        random.shuffle(SWEARS_LIST)
+
+    #search for that swear using the API
+    for swear in SWEARS_LIST:
+        replies = api.search(q=swear)
         #API gives replies in reverse order so flip them around, this step isn't strictly necessary but makes things cleaner
         replies.reverse()
 
-        
-        for reply in replies:
-            #call the repeat function for each reply
-            replyToTweet(api,reply)
+        #pull only the first result and post it
+        for reply in replies[:1]:
+                #call the repeat function for each reply
+                replyToTweet(api,reply)
   
-            #print reply to terminal
-            print("@{0} put a quarter in the swear jar: http://theswearjar.weebly.com".format(reply.user.screen_name.lower()))
-            #sleep for 15 minutes so we're not spamming 
-            time.sleep(900)
+                #print reply to terminal
+                print("Posted tweet to @{0} for comment:".format(reply.user.screen_name.lower()))
+                print(reply.text)
+                #sleep for 15 minutes so we're not spamming 
+                #time.sleep(900)
 
 main()
